@@ -1,0 +1,40 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build artifacts
+bin/
+dist/
+
+# Vendor directory (when using Go modules)
+vendor/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs and debug files
+*.log
+
+# Test coverage files
+*.cover
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Secrets and sensitive information
+.env
+config.yaml
