@@ -1,4 +1,3 @@
-// handlers/user_handler.go
 package handler
 
 import (
@@ -23,65 +22,124 @@ func NewUserHandler(userService *services.UserService) *UserHandler {
 	}
 }
 
+// UserResponse defines the structure of the response for user-related operations
+type UserResponse struct {
+	Users []model.User `json:"users"`
+}
+
+// ErrorResponse defines the structure of an error response
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Retrieve a list of all users
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} UserResponse
+// @Router /users [get]
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	users := h.userService.GetAllUsers()
-	c.JSON(http.StatusOK, gin.H{
-		"users": users,
-	})
+	c.JSON(http.StatusOK, UserResponse{Users: users})
 }
 
+// AddUser godoc
+// @Summary Create a new user
+// @Description Add a new user
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param body body model.CreateUserRequest true "User data"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} ErrorResponse
+// @Router /users [post]
 func (h *UserHandler) AddUser(c *gin.Context) {
-	var newUser model.User
+	var newUser model.CreateUserRequest
 	if err := c.ShouldBindJSON(&newUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid input"})
 		return
 	}
-	h.userService.AddUser(newUser)
-	middleware.LogMessage(("User added"))
-	c.JSON(http.StatusOK, gin.H{
-		"users": h.userService.GetAllUsers(),
-	})
+
+	// Convert CreateUserRequest to User and set ID
+	user := model.User{
+		Name:     newUser.Name,
+		Age:      newUser.Age,
+		Password: newUser.Password,
+	}
+
+	h.userService.AddUser(user)
+	middleware.LogMessage("User added")
+	c.JSON(http.StatusOK, UserResponse{Users: h.userService.GetAllUsers()})
 }
 
+// UpdateUser godoc
+// @Summary Update a user by ID
+// @Description Update an existing user by their ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Param body body model.User true "Updated user data"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @securityDefinitions.apiKey Authorization
+// @in header
+// @name Authorization
+// @Security JWT
+// @Router /users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid ID"})
 		return
 	}
 
 	var updatedUser model.User
 	if err := c.ShouldBindJSON(&updatedUser); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid input"})
 		return
 	}
 	updatedUser.ID = id
 
 	if err := h.userService.UpdateUser(updatedUser); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "User not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"users": h.userService.GetAllUsers(),
-	})
+	c.JSON(http.StatusOK, UserResponse{Users: h.userService.GetAllUsers()})
 }
 
+// DeleteUser godoc
+// @Summary Delete a user by ID
+// @Description Delete an existing user by their ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} UserResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @securityDefinitions.apiKey Authorization
+// @in header
+// @name Authorization
+// @Security JWT
+// @Router /users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid ID"})
 		return
 	}
 
 	if err := h.userService.DeleteUser(id); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "User not found"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"users": h.userService.GetAllUsers(),
-	})
+	c.JSON(http.StatusOK, UserResponse{Users: h.userService.GetAllUsers()})
 }
